@@ -1,153 +1,80 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:student_app/db/funcitons/dbfunctions.dart';
-import 'package:student_app/db/model/studentmodel.dart';
+import 'package:student_app/getx/controller.dart';
+import 'package:student_app/model/model.dart';
+import 'package:student_app/widgets%20and%20styles/styles.dart';
+import 'package:student_app/widgets%20and%20styles/widgets.dart';
 
-class AddStudentWidget extends StatefulWidget {
-  const AddStudentWidget({Key? key}) : super(key: key);
 
-  @override
-  State<AddStudentWidget> createState() => _AddStudentWidgetState();
-}
+class MyHomePage extends StatelessWidget {
+  MyHomePage({super.key});
 
-class _AddStudentWidgetState extends State<AddStudentWidget> {
-  final _nameController = TextEditingController();
-  final _ageController = TextEditingController();
-  final _departmentController = TextEditingController();
-  final _locationController = TextEditingController();
-  final _guardianController = TextEditingController();
-
+  final namecontroller = TextEditingController();
+  final agecontroller = TextEditingController();
+  final locationcontroller = TextEditingController();
   final picker = ImagePicker();
+  File? imagefile;
 
-  File? _imageFile;
-  final _formKey = GlobalKey<FormState>();
-
-  Future getImage() async {
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-
-    setState(() {
-      if (pickedFile != null) {
-        _imageFile = File(pickedFile.path);
-      }
-    });
+  Future getimage(BuildContext context) async {
+    final pickedfile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedfile != null) {
+      imagefile = File(pickedfile.path);
+      final imagegetx _imageController = Get.put(imagegetx());
+      _imageController.setimage(imagefile);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final imagegetx _imageController=Get.put(imagegetx());
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(28.0),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
+      appBar: AppBar(
+        title: Text(
+          'Add Student',
+          style: kwhitestyle,
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.purple,
+      ),
+      body: Center(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 30),
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 GestureDetector(
-                  onTap: () {
-                    getImage();
-                  },
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      image: DecorationImage(
-                        fit: BoxFit.cover,
-                        image: _imageFile != null
-                            ? FileImage(_imageFile!)
-                            : AssetImage(
-                            'assets/images/filepicker.png') as ImageProvider<
-                            Object>,
+                  onTap: () => getimage(context),
+                  child: Obx(() {
+                    return CircleAvatar(
+                      radius: 60,
+                      backgroundImage: _imageController.imagefile != null
+                          ? FileImage(_imageController.imagefile!)
+                          : null,
+                      child: const Text(
+                        'image',
+                        style: TextStyle(fontWeight: FontWeight.w100),
                       ),
-                    ),
-                    child: Icon(
-                      Icons.camera_alt,
-                      color: Colors.white,
-                      size: 40,
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  height: 10.0,
-                ),
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    hintText: 'Name',
-                  ),
-                  validator: (value) {
-                    if (value!.isEmpty) {
-                      return 'Please enter your name';
-                    }
-                    return null;
+                    );
                   },
-                ),
-                const SizedBox(height: 10.0),
-                TextFormField(
-                  controller: _ageController,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    hintText: 'Age',
-                  ),
-                  validator: (value) {
-                    if (value!.isEmpty) {
-                      return 'Please enter your age';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 10.0),
-                TextFormField(
-                  controller: _departmentController,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    hintText: 'Department',
-                  ),
-                  validator: (value) {
-                    if (value!.isEmpty) {
-                      return 'Please enter your department';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 10.0),
-                TextFormField(
-                  controller: _guardianController,
-                  decoration: InputDecoration(hintText: "guardian name",
-                    border: OutlineInputBorder(),
                   ),
                 ),
-                const SizedBox(height: 10.0),
-
-                TextFormField(
-                  controller: _locationController,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    hintText: 'Location',
-                  ),
-                  validator: (value) {
-                    if (value!.isEmpty) {
-                      return 'Please enter your Location';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(
-                  height: 30.0,
-                ),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      onAddStudentButtonClicked();
-                    }
-                  },
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Student'),
-                ),
+                box,
+                textField('name', namecontroller,TextInputType.name),
+                box,
+                textField('age', agecontroller,TextInputType.number),
+                box,
+                textField('class', locationcontroller,TextInputType.number),
+                box,
+                ElevatedButton(
+                    onPressed: () {
+                      onSaved(context);
+                    },
+                    child: const Text('Save')),
               ],
             ),
           ),
@@ -156,53 +83,30 @@ class _AddStudentWidgetState extends State<AddStudentWidget> {
     );
   }
 
-  Future<void> onAddStudentButtonClicked() async {
-    final _name = _nameController.text.trim();
-    final _age = _ageController.text.trim();
-    final _department = _departmentController.text.trim();
-    final _location = _locationController.text.trim();
-    final _guardian=_guardianController.text.trim();
-    if(_name.isEmpty || _age.isEmpty || _department.isEmpty||_location.isEmpty){
-      //  ScaffoldMessenger.of(context).showSnackBar(
-      //   const  SnackBar(
-      //       backgroundColor:Colors.red,
-      //       duration: Duration(seconds: 1),
-      //       content: Text('please fill all fields!',)),
-      //   );
-      return;
+  void onSaved(BuildContext context) {
+    if (imagefile == null ||
+        namecontroller.text.isEmpty ||
+        agecontroller.text.isEmpty ||
+        locationcontroller.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Every fields are required'),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ));
+    } else {
+      final name = namecontroller.text;
+      final age = agecontroller.text;
+      final location = locationcontroller.text;
+      final imagegetx _imageController =Get.find();
+      final image = _imageController.imagefile;
+
+      final person =
+      Student(name: name, age: age, location: location, image: image!);
+      final Studentgetx studedetails=Get.find();
+      studedetails.addstudent(person);
+
+      _imageController.setimage(null);
+      Navigator.of(context).pop();
     }
-    if(_imageFile ==null){
-      //return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const  SnackBar(
-            backgroundColor:Colors.red,
-            duration: Duration(seconds: 1),
-            content: Text('please add your picture!')),
-      );
-    }
-
-    final bytes = await _imageFile!.readAsBytes();
-    final String base64Image = base64Encode(bytes);
-
-    StudentModel _student = StudentModel(
-      name: _name,
-      age: _age,
-      department: _department,
-      profilePhoto: base64Image,
-      location:_location,
-      guardian:_guardian,
-    );
-
-    addStudent(_student);
-    _nameController.clear();
-    _ageController.clear();
-    _departmentController.clear();
-    _locationController.clear();
-    setState(() {
-      _imageFile = null;
-    });
-
-    Navigator.pop(context);
-
   }
 }
